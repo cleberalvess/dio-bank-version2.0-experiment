@@ -1,0 +1,166 @@
+import textwrap
+
+
+def menu():
+    menu = """\n
+
+    * BEM VINDO AO BANK OF KINGDOM *
+    --- O QUE DESEJA FAZER HOJE? ---
+
+    ================ MENU ================
+    [1]\tDepositar
+    [2]\tSacar
+    [3]\tExtrato
+    [4]\tNova conta
+    [5]\tListar contas
+    [6]\tNovo usuário
+    [7]\tSair
+    → """
+    return input(textwrap.dedent(menu))
+
+
+def depositar(saldo, valor, extrato, /):
+    if valor > 0:
+        saldo += valor
+        extrato += f"Depósito:\tR$ {valor:.2f}\n"
+        print("\n=== Depósito concluído! Seu saldo agradece 💰 ===")
+    else:
+        print("\nOps! Valor inválido. Tente novamente com um depósito positivo 💰")
+
+    return saldo, extrato
+
+
+def sacar(*, saldo, valor, extrato, limite, numero_saques, limite_saques):
+    excedeu_saldo = valor > saldo
+    excedeu_limite = valor > limite
+    excedeu_saques = numero_saques >= limite_saques
+
+    if excedeu_saldo:
+        print("\nVocê está tentando sacar mais do que possui. Revise o valor! ")
+
+    elif excedeu_limite:
+        print("\nOps! Esse valor ultrapassa o limite de saque.")
+
+    elif excedeu_saques:
+        print("\nVocê já sacou o máximo permitido por hoje. Volte amanhã")
+
+    elif valor > 0:
+        saldo -= valor
+        extrato += f"Saque:\t\tR$ {valor:.2f}\n"
+        numero_saques += 1
+        print("\n=== Saque concluído! Seu bolso sorri. ===")
+
+    else:
+        print("\nOps! Valor de saque inválido. Digite um número positivo")
+
+    return saldo, extrato
+
+
+def exibir_extrato(saldo, /, *, extrato):
+    print("\n================ EXTRATO ================")
+    print("Nada para mostrar: hoje não houve transações. Movimente sua conta!" if not extrato else extrato)
+    print(f"\nSaldo:\t\tR$ {saldo:.2f}")
+    print("==========================================")
+
+
+def criar_usuario(usuarios):
+    cpf = input("Precisamos do seu CPF pra seguir com o cadastro (somente número): ")
+    usuario = filtrar_usuario(cpf, usuarios)
+
+    if usuario:
+        print("\nOps! Já temos um registro com esse CPF")
+        return
+
+    nome = input("Digite seu nome completo pra gente te conhecer melhor: ")
+    data_nascimento = input("Digite sua data de nascimento pra continuar (dd-mm-aaaa): ")
+    endereco = input("Digite seu endereço completinho pra finalizar o cadastro (logradouro, nro - bairro - cidade/sigla estado): ")
+
+    usuarios.append({"nome": nome, "data_nascimento": data_nascimento, "cpf": cpf, "endereco": endereco})
+
+    print("=== Cadastro feito! Bem-vindo(a) à experiência! ===")
+
+
+def filtrar_usuario(cpf, usuarios):
+    usuarios_filtrados = [usuario for usuario in usuarios if usuario["cpf"] == cpf]
+    return usuarios_filtrados[0] if usuarios_filtrados else None
+
+
+def criar_conta(agencia, numero_conta, usuarios):
+    cpf = input("Digite o CPF do usuário pra gente localizar (somente número): ")
+    usuario = filtrar_usuario(cpf, usuarios)
+
+    if usuario:
+        print("\n=== Tudo certo! A conta tá ativa e pronta pra usar ===")
+        return {"agencia": agencia, "numero_conta": numero_conta, "usuario": usuario}
+
+    print("\nUsuário não localizado. Verifique os dados e tente de novo, até a próxima! 👋")
+
+
+def listar_contas(contas):
+    for conta in contas:
+        linha = f"""
+            Aqui estão as contas cadastradas no sistema 👇\n
+            Agência:\t{conta['agencia']}
+            C/C:\t\t{conta['numero_conta']}
+            Titular:\t{conta['usuario']['nome']}
+        """
+        print("=" * 100)
+        print(textwrap.dedent(linha))
+
+
+def main():
+    LIMITE_SAQUES = 3
+    AGENCIA = "0001"
+
+    saldo = 0
+    limite = 500
+    extrato = ""
+    numero_saques = 0
+    usuarios = []
+    contas = []
+
+    while True:
+        opcao = menu()
+
+        if opcao == "1":
+            valor = float(input("Qual valor você quer depositar hoje? R$"))
+
+            saldo, extrato = depositar(saldo, valor, extrato)
+
+        elif opcao == "2":
+            valor = float(input("Qual valor você deseja sacar? R$"))
+
+            saldo, extrato = sacar(
+                saldo=saldo,
+                valor=valor,
+                extrato=extrato,
+                limite=limite,
+                numero_saques=numero_saques,
+                limite_saques=LIMITE_SAQUES,
+            )
+
+        elif opcao == "3":
+            exibir_extrato(saldo, extrato=extrato)
+
+        elif opcao == "6":
+            criar_usuario(usuarios)
+
+        elif opcao == "4":
+            numero_conta = len(contas) + 1
+            conta = criar_conta(AGENCIA, numero_conta, usuarios)
+
+            if conta:
+                contas.append(conta)
+
+        elif opcao == "5":
+            listar_contas(contas)
+
+        elif opcao == "7":
+            print(f" - Obrigado pela confiança! O Bank of Kingdom espera você de novo, até breve! - ")
+            break
+
+        else:
+            print("Ops! Operação inválida. Escolha uma das opções disponíveis.")
+
+
+main()
